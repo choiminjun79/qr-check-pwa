@@ -1,0 +1,21 @@
+{
+  "name": "QR \ucd9c\uadfc \uccb4\ud06c",
+  "short_name": "\ucd9c\uadfc\uccb4\ud06c",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "description": "QR\ucf54\ub4dc \uc2a4\uce94\uc73c\ub85c \ucd9c\uadfc \uccb4\ud06c\ud558\uace0 \uc11c\uba85\uae4c\uc9c0 \uac00\ub2a5\ud55c \uac04\ud3b8 \uc2dc\uc2a4\ud15c",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
