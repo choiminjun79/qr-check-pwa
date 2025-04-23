@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR 출근 체크 (PWA)</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    #reader { width: 300px; margin: 0 auto; }
+    video { width: 100% !important; height: auto !important; }
+    .hidden { display: none; }
+    .form-section { margin-top: 20px; }
+    .signature { border: 1px solid #ccc; width: 300px; height: 150px; background: #fff; }
+    .warning { color: red; font-weight: bold; margin-top: 10px; }
+    .guide-link { color: blue; text-decoration: underline; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>QR 출근 체크</h2>
+  <div id="reader"></div>
+  <div id="camera-warning" class="warning hidden">
+    ❗ 카메라 접근이 차단되었습니다.<br />
+    <span class="guide-link" onclick="goToSettings()">카메라 설정 페이지로 이동하기</span>
+  </div>
+
+  <div id="user-info" class="form-section hidden">
+    <p><strong>이름:</strong> <span id="name"></span></p>
+    <p><strong>전화번호:</strong> <span id="phone"></span></p>
+    <p><strong>출근 시간:</strong> <span id="timestamp"></span></p>
+
+    <h3>근로계약 동의서</h3>
+    <p>본인은 당일 근무에 동의하며, 아래에 서명합니다.</p>
+    <canvas id="signature" class="signature"></canvas>
+    <button onclick="clearSignature()">서명 지우기</button><br /><br />
+    <button onclick="submitData()">제출</button>
+  </div>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js").then(() => {
+        console.log("서비스 워커 등록 완료");
+      });
+    }
+
+    const reader = new Html5Qrcode("reader");
+    const signatureCanvas = document.getElementById("signature");
+    const ctx = signatureCanvas.getContext("2d");
+    let drawing = false;
+
+    signatureCanvas.addEventListener("mousedown", () => drawing = true);
+    signatureCanvas.addEventListener("mouseup", () => {
+      drawing = false;
+      ctx.beginPath();
+    });
+    signatureCanvas.addEventListener("mousemove", (e) => {
+      if (!drawing) return;
+      const rect = signatureCanvas.getBoundingClientRect();
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "black";
+      ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    });
+
+    function clearSignature() {
+      ctx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+    }
+
+    function submitData() {
+      alert("제출 완료! (데이터 저장은 백엔드 연결 필요)");
+    }
+
+    function getTimestamp() {
+      const now = new Date();
+      return now.toLocaleString();
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+      try {
+        const data = JSON.parse(decodedText);
+        document.getElementById("name").innerText = data.name;
+        document.getElementById("phone").innerText = data.phone;
+        document.getElementById("timestamp").innerText = getTimestamp();
+        document.getElementById("user-info").classList.remove("hidden");
+        reader.stop();
+      } catch (error) {
+        alert("QR 데이터 형식이 잘못되었습니다.");
+      }
+    }
+
+    function goToSettings() {
+      alert("브라우저 주소창 왼쪽 🔒 자물쇠 아이콘을 눌러 '사이트 설정' 또는 '권한' 항목에서 카메라 접근을 허용해 주세요.");
+    }
+
+    window.onload = () => {
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+          const cameraId = devices[0].id;
+          reader.start(
+            cameraId,
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            onScanSuccess
+          ).catch(err => {
+            console.error("카메라 시작 실패", err);
+            document.getElementById("camera-warning").classList.remove("hidden");
+          });
+        } else {
+          alert("사용 가능한 카메라가 없습니다.");
+        }
+      }).catch(err => {
+        console.error("카메라 검색 실패", err);
+        document.getElementById("camera-warning").classList.remove("hidden");
+      });
+    };
+  </script>
+</body>
+</html>
